@@ -307,19 +307,6 @@ int main()
 		//cubeshader.setUniform("projection", projection);
 		//CubeVAO.Bind();
 		//glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-		//skybox
-		//glDepthFunc(GL_LEQUAL);
-		//skyboxshader.use();
-		//view = glm::mat4(glm::mat3(cam.GetViewMat()));	//remove translation to prevent skybox moving
-		//skyboxshader.setUniform("view", view);
-		//skyboxshader.setUniform("projection", projection);
-		//SkyBoxVAO.Bind();
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-		//glActiveTexture(GL_TEXTURE0);
-		//skybox.Bind();
-		//glDepthFunc(GL_LESS);
 		
 		sky.DrawSkyBox(skyboxshader,cam.GetViewMat(),projection);
 
