@@ -7,11 +7,11 @@
 class SkyBox
 {
 public:
-	SkyBox(CustomTexture& cubemap);
+	SkyBox(Texture& cubemap);
 	void DrawSkyBox(Shader& skyboxshader , const glm::mat4& CameraViewMat, const glm::mat4& projection);
 
 private:
-	CustomTexture& cubemap;
+	Texture& cubemap;
 	VertexArray SkyBoxVAO;
 	VertexBuffer SkyBoxVBO;
 };

@@ -12,7 +12,8 @@
 #include "Texture.h"
 #include "Model.h"
 #include "SkyBox.h"
-
+#include "Light.h"
+#include "Shapes.h"
 
 double lastX = 400, lastY = 300;	//initialize mouse pos to center of screen
 bool firstMouse = true;
@@ -96,13 +97,9 @@ int main()
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glEnable(GL_DEPTH_TEST);
-	//input
 	glfwSetCursorPosCallback(window, mouse_callback);
-	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	
-	unsigned int framebuffer;
-	glGenFramebuffers(1, &framebuffer);
 	float vertices[] = {
 	   -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f// positions          // normals           // texture coords
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -180,7 +177,7 @@ int main()
 
 	VertexArray Lights;
 	
-	//skybox setup
+	//skyboxtexture setup
 	std::vector<std::string> skyboxjpg;
 	skyboxjpg.emplace_back("right.jpg");
 	skyboxjpg.emplace_back("left.jpg");
@@ -189,88 +186,33 @@ int main()
 	skyboxjpg.emplace_back("front.jpg");
 	skyboxjpg.emplace_back("back.jpg");
 
-	CustomTexture skybox;
-	skybox.loadCubeMap(skyboxjpg);
+	Texture skyboxtexture;
+	skyboxtexture.loadCubeMap(skyboxjpg);
 	Shader skyboxshader("assets/shaders/skyvert.vs","assets/shaders/skyfrag.fs");
-
-	SkyBox sky(skybox);
+	SkyBox sky(skyboxtexture);
 	
-	Model bag("assets/models/backpack/backpack.obj");
-	Shader bagshader("assets/shaders/bagvert.vs", "assets/shaders/bagfrag.fs");
+	//model setup
+	//Model bag("backpack/backpack.obj");
+	//Shader bagshader("assets/shaders/bagvert.vs", "assets/shaders/bagfrag.fs");
 
-	stbi_set_flip_vertically_on_load(true);
 
-	////load diffuse map
-	//unsigned int diffusemap;
-	//glGenTextures(1, &diffusemap);
-	//// load and generate the texture
-	//int width, height, nrComponents;
-	//unsigned char *data = stbi_load("assets/textures/container.jpg", &width, &height, &nrComponents, 0);
-	//
-	//if (data)
-	//{
-	//	GLenum format;
-	//	if (nrComponents == 1) format = GL_RED;
-	//	else if (nrComponents == 3) format = GL_RGB;
-	//	else if (nrComponents == 4) format = GL_RGBA;
-	//
-	//	
-	//	glBindTexture(GL_TEXTURE_2D, diffusemap);
-	//	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-	//	glGenerateMipmap(GL_TEXTURE_2D);
-	//	
-	//	// set the texture wrapping/filtering options (on the currently bound texture object)
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//	stbi_image_free(data);
-	//}
-	//
-	//else
-	//{
-	//	std::cout << "Failed to load texture" << std::endl;
-	//	throw std::runtime_error("failed texture loading!");
-	//	stbi_image_free(data);
-	//}
-	//
-	////specular map
-	//unsigned int specularmap;
-	//glGenTextures(1, &specularmap);
-	//data = stbi_load("assets/textures/container_specular.jpg", &width, &height, &nrComponents, 0);
-	//if (data)
-	//{
-	//	GLenum format;
-	//	if (nrComponents == 1) format = GL_RED;
-	//	else if (nrComponents == 3) format = GL_RGB;
-	//	else if (nrComponents == 4) format = GL_RGBA;
-	//
-	//	glBindTexture(GL_TEXTURE_2D, specularmap);
-	//	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-	//	glGenerateMipmap(GL_TEXTURE_2D);
-	//
-	//	// set the texture wrapping/filtering options (on the currently bound texture object)
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//	stbi_image_free(data);
-	//}
-	//
-	//else
-	//{
-	//	std::cout << "Failed to load texture" << std::endl;
-	//	throw std::runtime_error("failed texture loading!");
-	//	stbi_image_free(data);
-	//}
+	//light setup
+	Light light;
+	glm::vec3 light_color(300.0f, 300.0f, 300.0f);
+	light.addPointLight({ glm::vec3(-10.0f , 10.0f , 10.0f) , light_color });
+	light.addPointLight({ glm::vec3(10.0f , 10.0f , 10.0f) , light_color });
+	light.addPointLight({ glm::vec3(-10.0f , -10.0f , 10.0f) , light_color });
+	light.addPointLight({ glm::vec3(10.0f , -10.0f , 10.0f) , light_color });
+
+	//sphere
+	Shapes spheres;
+	Shader pbrshader( "assets/shaders/pbr.vs" , "assets/shaders/pbr.fs" );
 
 
 	float t = 0.0f;
-	/*the loop*/
-	Shader cubeshader("assets/shaders/cubevertex.vs", "assets/shaders/cubefragment.fs");	//for drawing ad shading cube objects
-	Shader lightcube("assets/shaders/lightvertex.vs","assets/shaders/lightfrag.fs");	//for drawing light cubes
-
-
+	
+	//Shader cubeshader("assets/shaders/cubevertex.vs", "assets/shaders/cubefragment.fs");	//for drawing ad shading cube objects
+	//Shader lightcube("assets/shaders/lightvertex.vs","assets/shaders/lightfrag.fs");	//for drawing light cubes
 
 
 	while (!glfwWindowShouldClose(window)) {
@@ -291,12 +233,28 @@ int main()
 		view = cam.GetViewMat();
 		projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 		
+		pbrshader.use();
+		pbrshader.setUniform("view", view);
+		pbrshader.setUniform("camPos", cam.camerapos);
+		pbrshader.setUniform("projection", projection);
+		pbrshader.setUniform("ao", 1.0f);
+		pbrshader.setUniform("albedo",glm::vec3(0.5f , 0.0f , 0.0f));
 
-		bagshader.use();
-		bagshader.setUniform("model", cubemodel);
-		bagshader.setUniform("view", view);
-		bagshader.setUniform("projection", projection);
-		bag.Draw(bagshader);	//set up the textures in draw call.
+		for (int i = 0; i < light.numPointLights(); ++i)
+		{
+			pbrshader.setUniform("light[" + std::to_string(i) + "].LightPos", light.PointLight_vec[i].position);
+			pbrshader.setUniform("light[" + std::to_string(i) + "].LightColor", light.PointLight_vec[i].Color);
+		}
+
+		spheres.renderSphere(1, 2,10.5f,pbrshader);
+
+
+
+		//bagshader.use();
+		//bagshader.setUniform("model", cubemodel);
+		//bagshader.setUniform("view", view);
+		//bagshader.setUniform("projection", projection);
+		//bag.Draw(bagshader);	//set up the textures in draw call.
 
 		//cubeshader.use();
 		//cubeshader.setUniform("lightPos", lightpos);
@@ -310,7 +268,6 @@ int main()
 		
 		sky.DrawSkyBox(skyboxshader,cam.GetViewMat(),projection);
 
-		//
 		//lightcube.use();
 		//lightcube.setUniform("model", lightmodel);
 		//lightcube.setUniform("view", view);
@@ -319,7 +276,7 @@ int main()
 		//LightSrcVAO.Bind();
 		//
 		//glDrawArrays(GL_TRIANGLES, 0, 36);
-		//
+		
 		t += 1.0f;
 		
 		glfwSwapBuffers(window);

@@ -13,7 +13,7 @@ struct Vertex
 	glm::vec3 Bitangent;
 };
 
-struct Texture
+struct Texture_Mesh
 {
 	unsigned int ID;
 	std::string type;
@@ -26,12 +26,12 @@ class Mesh
 private:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<Texture> textures;
+	std::vector<Texture_Mesh> textures;
 
 	unsigned int VBO, EBO, VAO;
 
 public:
-	Mesh(std::vector<Vertex> vertices,std::vector<unsigned int> indices,std::vector<Texture> textures);
+	Mesh(std::vector<Vertex> vertices,std::vector<unsigned int> indices,std::vector<Texture_Mesh> textures);
 
 	void Draw(Shader& shader);
 

@@ -6,11 +6,12 @@
 #include <iostream>
 #include <string>
 
-class CustomTexture
+class Texture
 {
 public:
-	CustomTexture(); 
+	Texture(); 
 	void loadCubeMap(const std::vector<std::string>& img_names);
+	void loadHDR(const std::string& img_name);
 	void loadTexture(const std::string& img_name);
 	void Bind();
 

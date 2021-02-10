@@ -12,7 +12,7 @@
 class Model
 {
 public:
-	Model(const std::string& pFile);
+	Model(const std::string& filename);
 	void Draw(Shader& shader);
 
 private:
@@ -56,13 +56,15 @@ private:
 		return textureID;
 	}
 
+	std::string location = "assets/models/";
 	std::string directory;
 	std::vector<Mesh> meshes;
-	std::vector<Texture> textures_loaded;
+	std::vector<Texture_Mesh> textures_loaded;
+	
 
 	void processNode(aiNode* node, const aiScene *scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
-	std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type,
+	std::vector<Texture_Mesh> loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 		std::string typeName);
 
 	

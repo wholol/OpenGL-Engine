@@ -25,10 +25,13 @@ public:
 	void rotatecamera(float xoffset, float yoffset, bool constrainpitch = true);
 	glm::mat4 GetViewMat();
 
+public:
+	glm::vec3 camerapos;
+
 
 private:
 	glm::vec3 target;
-	glm::vec3 camerapos;
+	
 	glm::vec3 right;
 	glm::vec3 up;
 	glm::vec3 forward;

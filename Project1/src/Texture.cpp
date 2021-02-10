@@ -1,17 +1,16 @@
 #include "Texture.h"
 
-CustomTexture::CustomTexture()
+Texture::Texture()
 {
 	glGenTextures(1, &ID);
 }
 
-void CustomTexture::loadCubeMap(const std::vector<std::string>& faces)
+void Texture::loadCubeMap(const std::vector<std::string>& faces)
 {
 	glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
 	int width, height, nrChannels;
 
 	
-
 	for (unsigned int i = 0; i < faces.size(); i++)
 	{
 		unsigned char *data = stbi_load((filepath + faces[i]).c_str(), &width, &height, &nrChannels, 0);
@@ -36,7 +35,7 @@ void CustomTexture::loadCubeMap(const std::vector<std::string>& faces)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
-void CustomTexture::loadTexture(const std::string& img_name)
+void Texture::loadTexture(const std::string& img_name)
 {
 	std::string location = filepath + img_name;
 
@@ -70,7 +69,7 @@ void CustomTexture::loadTexture(const std::string& img_name)
 	}
 }
 
-void CustomTexture::Bind()
+void Texture::Bind()
 {
 	glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
 }

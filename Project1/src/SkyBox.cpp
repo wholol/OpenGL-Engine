@@ -1,6 +1,6 @@
 #include "SkyBox.h"
 
-SkyBox::SkyBox(CustomTexture& cubemap)
+SkyBox::SkyBox(Texture& cubemap)
 	:cubemap(cubemap)
 {
 
@@ -64,7 +64,7 @@ void SkyBox::DrawSkyBox(Shader& skyboxshader,const glm::mat4& CameraViewMat,cons
 	skyboxshader.setUniform("view", view); //remove translation to prevent skybox moving
 	skyboxshader.setUniform("projection", projection);
 	SkyBoxVAO.Bind();
-	glDrawArrays(GL_TRIANGLES, 0, 36);	//36 = sizeof(skyboxvertices)
+	glDrawArrays(GL_TRIANGLES, 0, 36);	//36 = sizeof(skyboxvertices) (defined in constrctor of this class)
 	glActiveTexture(GL_TEXTURE0);
 	cubemap.Bind();
 	glDepthFunc(GL_LESS);
