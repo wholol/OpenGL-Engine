@@ -15,8 +15,8 @@ struct vertexattriblayout
 class VertexBuffer
 {
 public:
+	VertexBuffer(size_t vertexsize, void* vertexdata, size_t setstridesize);	//calls genbuffers,bind,bufferdata by default
 	VertexBuffer() {};
-	VertexBuffer(size_t vertexsize,void* vertexdata , size_t setstridesize);	//calls genbuffers,bind,bufferdata by default
 	void Bind();
 	void addattriblayout(int num_components,GLenum type, bool normalized = false);
 	std::vector<vertexattriblayout>& getattriblayout();

@@ -1,46 +1,48 @@
 #pragma once
+#include "Texture.h"
 #include <string>
-#include <gl/glew.h>
-#include <vector>
-#include "stb_image.h"
-#include <iostream>
-#include <string>
-#include "Shader.h"
-#include "VertexArray.h"
-#include "VertexBuffer.h"
+#include <GL/glew.h>	
 
-enum class Texture_Type
-{
-	CUBEMAP,
-	TEXTURE_2D
-};
-
-class Texture
+//given a hdr map, set up the diffuse irradiance map , specular irradiace mipmap, and BRDF intergration map
+class IBL_Setup
 {
 public:
-	Texture(); 
-	void loadCubeMap(const std::vector<std::string>& img_names);
-	void loadHDR(const std::string& img_name);
-	void loadTexture(const std::string& img_name);
-	void genCubeMap(int texWidth, int texHeight , bool enableMipMap = false) const;		//generate null cubemap
-	void genTexture(int texWidth, int texHeight);
-	unsigned int getTexID() const;
-	void Bind();
-	void HDR_to_CubeMap(const std::string& img_name , int texWidth, int texHeight,const Texture& nullCubeMap , Shader& equi_2_rect);		//converts the current texture to HDR
-	unsigned int ID;
+
+	IBL_Setup(const std::string& img_name , int diffuse_irr_texWidth , int diffuse_irr_texHeight, 
+				int specular_texWidth , int specular_texHeight , int BRDF_intergral_texWidth, int BRDF_intergral_texHeight);
+	
+	void diffuse_irradiance_Bind();
+	void BRDF_itnergration_map_Bind();
+	void specular_cubemap_Bind();
 
 private:
-    const std::string filepath = "assets/textures/";
+	Texture HDRTexture;
+	Texture cubemap;		//this cubemap is used to store the HDR (to be used for screen rendering).
+	Texture diffuse_irradiance_cubemap;
+	Texture BRDF_intergration_map;
+	Texture specular_prefilter_cubemap;
 	
-	Texture_Type textype;
-	bool isHDR = false;
-	
-	
-	//HDR to cubeMap parameters 
-	unsigned int cubeFBO, cubeRBO;
-	VertexArray CubeMapVAO;
-	VertexBuffer CubeMapVBO;
+	std::string img_name;
 
+	int diffuse_irr_texWidth, diffuse_irr_texHeight;
+	int specular_texWdith, specular_texHeight;
+	int BRDF_intergral_texWidth, BRDF_intergral_texHeight;
+
+	//shaders involved
+	Shader equi_2_cubemap_shader = Shader("assets/shaders/equi_2_cubemap.vs", "assets/shaders/equi_2_cubemap.fs");	
+	Shader diff_convolution_shader = Shader("assets/shaders/equi_2_cubemap.vs", "assets/shaders/convolute_cubemap.fs");
+	Shader BRDF_intergrate_shader = Shader("assets/shaders/BRDF_IBL.vs", "assets/shaders/BRDF_IBL.fs");
+	Shader specular_pre_filtered_shader = Shader("assets/shaders/equi_2_cubemap.vs", "assets/shaders/prefilter_specular_IBL.fs");
+
+
+	void diffuse_irradiance_init();
+	void BRDF_intergation_map_init();
+	void specular_mipmap_init();
+
+	unsigned int FBO, RBO;		//frame buffer adn render buffer object.
+	
+	
+	
 	unsigned int cubeVAO = 0;
 	unsigned int cubeVBO = 0;
 	void renderCube()
@@ -92,7 +94,6 @@ private:
 				-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
 				-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
 			};
-
 			glGenVertexArrays(1, &cubeVAO);
 			glGenBuffers(1, &cubeVBO);
 			// fill buffer
@@ -112,6 +113,35 @@ private:
 		// render Cube
 		glBindVertexArray(cubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+	}
+
+	unsigned int quadVAO = 0;
+	unsigned int quadVBO;
+	void renderQuad()
+	{
+		if (quadVAO == 0)
+		{
+			float quadVertices[] = {
+				// positions        // texture Coords
+				-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+				-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+				 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+				 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+			};
+			// setup plane VAO
+			glGenVertexArrays(1, &quadVAO);
+			glGenBuffers(1, &quadVBO);
+			glBindVertexArray(quadVAO);
+			glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		}
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
 	}
 };

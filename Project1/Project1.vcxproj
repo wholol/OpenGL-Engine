@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -138,9 +138,11 @@
   <ItemGroup>
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\camera\camera.cpp" />
+    <ClCompile Include="src\IBL_Setup.cpp" />
     <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Model.cpp" />
+    <ClCompile Include="src\Scenes.cpp" />
     <ClCompile Include="src\Shapes.cpp" />
     <ClCompile Include="src\SkyBox.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
@@ -150,9 +152,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera\camera.h" />
+    <ClInclude Include="src\IBL_Setup.h" />
     <ClInclude Include="src\Light.h" />
     <ClInclude Include="src\Mesh.h" />
     <ClInclude Include="src\Model.h" />
+    <ClInclude Include="src\Scenes.h" />
     <ClInclude Include="src\Shapes.h" />
     <ClInclude Include="src\SkyBox.h" />
     <ClInclude Include="src\stb_image.h" />

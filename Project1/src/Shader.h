@@ -44,6 +44,8 @@ public:
 		catch (std::ifstream::failure& e)
 		{
 			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+			std::cout << "ERROR::SHADER::FILE::VS: "  << vertexPath << std::endl;
+			std::cout << "ERROR::SHADER::FILE::FS: " << fragmentPath << std::endl;
 		}
 		const char* vShaderCode = vertexCode.c_str();
 		const char * fShaderCode = fragmentCode.c_str();

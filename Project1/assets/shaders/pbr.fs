@@ -13,10 +13,18 @@ in vec3 Normal;
 
 #define MAX_LIGHTS 4    //maximum lights for scene
 
-uniform vec3 albedo;
-uniform float metallic;
+uniform vec3 albedo;    //shape color
+uniform float metallic; 
 uniform float roughness;
 uniform float ao;
+uniform bool isTextured;
+
+//texture material parameters
+uniform sampler2D albedoMap;
+uniform sampler2D normalMap;
+uniform sampler2D metallicMap;
+uniform sampler2D roughnessMap;
+uniform sampler2D aoMap;
 
 uniform Light_Params light[MAX_LIGHTS];
 
@@ -28,17 +36,33 @@ vec3 Schlick(float cos_theta , vec3 F0);
 float DistributionGGX(vec3 N, vec3 H, float a); //approximates microfacets
 float GeometryShlickGGX(vec3 N , vec3 V , float k);     //approimate self-shdowing (v = light dir and view dir)
 float GeometrySmith(vec3 N , vec3 V, vec3 L, float k);  //approximates self-shadowing
-
+vec3 getNormalFromMap();
 
 void main()
 {
+    //without textures
+    vec3 albedo_ = albedo;
+    float metallic_ = metallic;
+    float roughness_ = roughness;
+    float ao_ = ao;
     vec3 N = normalize(Normal);
+
+    if (isTextured)
+    {
+        albedo_ = pow(texture(albedoMap, aTex).rgb, vec3(2.2));
+        metallic_ = texture(metallicMap, aTex).r;
+        roughness_ = texture(roughnessMap, aTex).r;
+        ao_        = texture(aoMap, aTex).r;
+        N = getNormalFromMap();
+    }
+
+    
     vec3 V = normalize(camPos - WorldPos);
    
     vec3 Lo = vec3(0.0);    //total light
     
     vec3 F0 = vec3(0.04);           //refraction index basically.
-    F0 = mix(F0, albedo, metallic); //metallic surfaces
+    F0 = mix(F0, albedo_, metallic_); //metallic surfaces
     
 
     for (int i = 0 ; i < MAX_LIGHTS; ++i)
@@ -52,27 +76,29 @@ void main()
        vec3 radiance = light[i].LightColor * atten;
         
         //Cook Torrance
-        float NDF = DistributionGGX(N,H,roughness);
-        float G = GeometrySmith(N,V,L,roughness);
+        float NDF = DistributionGGX(N,H,roughness_);
+        float G = GeometrySmith(N,V,L,roughness_);
         vec3 F = Schlick(clamp(dot(H, V), 0.0, 1.0), F0);
 
         vec3 specular = (NDF * G * F) / max( (4.0f * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) ) , 0.001f );
         vec3 kS = F;   //kS is the ratio that gets reflected
         
-        vec3 fLambert = albedo / PI;
+        vec3 fLambert = albedo_ / PI;
          
         vec3 kD = vec3(1.0) - kS;
 
-        kD *= 1.0 - metallic;   //remove diffuse strength based on "metalness"
+        kD *= 1.0 - metallic_;   //remove diffuse strength based on "metalness"
 
         float n_dot_l = max(dot(N, L), 0.0); 
         Lo += (( kD * fLambert ) + specular ) * radiance * n_dot_l;
     }
+    vec3 color = Lo;
 
-    vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 color = ambient + Lo;
+    vec3 ambient = vec3(0.03) * albedo_ * ao_;
 
-    color = color / (color + vec3(1.0));    //HDR
+    color += ambient;
+
+    color = color / (color + vec3(1.0));    //HDR tone mapping
     color = pow (color , vec3(1.0 / 2.2));
 
     FragColor = vec4(color , 1.0);
@@ -112,4 +138,21 @@ float GeometrySmith(vec3 N , vec3 V, vec3 L, float k)
     float GeometryShlickGGX_lightdir = GeometryShlickGGX(N,L,k);
 
     return GeometryShlickGGX_view * GeometryShlickGGX_lightdir;
+}
+
+vec3 getNormalFromMap()
+{
+    vec3 tangentNormal = texture(normalMap, aTex).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx(WorldPos);
+    vec3 Q2  = dFdy(WorldPos);
+    vec2 st1 = dFdx(aTex);
+    vec2 st2 = dFdy(aTex);
+
+    vec3 N   = normalize(Normal);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B  = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
 }
