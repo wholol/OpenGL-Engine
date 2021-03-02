@@ -100,8 +100,10 @@ void Texture::loadTexture(const std::string& img_name)
 	}
 }
 
-void Texture::genCubeMap(int texWidth, int texHeight, bool enableMipMap) const
+void Texture::genCubeMap(int texWidth, int texHeight, bool enableMipMap)
 {
+	textype = Texture_Type::CUBEMAP;
+
 	glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
 
 	for (int i = 0; i < 6; ++i)
@@ -131,7 +133,7 @@ void Texture::genTexture(int texWidth, int texHeight)
 	textype = Texture_Type::TEXTURE_2D;
 
 	glBindTexture(GL_TEXTURE_2D, ID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, texWidth, texHeight, 0, GL_RG, GL_FLOAT, nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, texWidth, texHeight, 0, GL_RG, GL_FLOAT,nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -156,109 +158,4 @@ void Texture::Bind()
 	}
 }
 
-void Texture::HDR_to_CubeMap(const std::string& img_name, int texWidth, int texHeight , const Texture& nullCubeMap, Shader& equi_2_cubemap_shader)
-{
-	loadHDR(img_name);		//load HDR image to this textuere class
 
-	//CONVERSION PROCESS
-	if (isHDR) {
-		std::cout << "converting HDR to cubemap" << std::endl;
-	//Shader equi_2_cubemap_shader = Shader("assets/shaders/equi_2_cubemap_shader.vs", "assets/shaders/equi_2_cubemap_shader.fs");	//converts HDR (equirectangular map) to cubemap.
-	
-	glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-	glm::mat4 captureViews[] =
-	{
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-	};
-
-	float vertices[] = {		//for cube map
-		// back face
-		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
-		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-		-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-		// front face
-		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-		 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-		-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-		// left face
-		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		// right face
-		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
-		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
-		// bottom face
-		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		 1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		-1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		// top face
-		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		 1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		 1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
-		 1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
-	};
-
-		glGenFramebuffers(1, &cubeFBO);
-		glGenRenderbuffers(1, &cubeRBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, cubeFBO);
-		glBindRenderbuffer(GL_RENDERBUFFER, cubeRBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, texWidth, texHeight);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, cubeRBO);
-	
-		nullCubeMap.genCubeMap(texWidth,texHeight);	//generate a null data cubemap
-
-		equi_2_cubemap_shader.use();					//use the conversion shader
-		equi_2_cubemap_shader.setUniform("projection", captureProjection);
-		equi_2_cubemap_shader.setUniform("equirectangularMap", 0);	
-		glActiveTexture(GL_TEXTURE0);	//sample HDR texture in the shader
-		Bind();		
-		
-		glViewport(0, 0, texWidth, texHeight);
-		glBindFramebuffer(GL_FRAMEBUFFER, cubeFBO);
-	
-		//VertexBuffer temp(sizeof(vertices), vertices, 8);
-		
-		//this->CubeMapVBO = std::move(temp);
-		
-		for (int i = 0u; i < 6; ++i)
-		{
-			equi_2_cubemap_shader.setUniform("view", captureViews[i]);	
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, nullCubeMap.getTexID(), 0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			renderCube();
-			//CubeMapVBO.Bind();
-			//CubeMapVBO.addattriblayout(3, GL_FLOAT, GL_FALSE);
-			//CubeMapVBO.addattriblayout(3, GL_FLOAT, GL_FALSE);
-			//CubeMapVBO.addattriblayout(2, GL_FLOAT, GL_FALSE);
-			//CubeMapVAO.EnableAttribs(CubeMapVBO);
-			//CubeMapVAO.Bind();
-			//glDrawArrays(GL_TRIANGLES, 0, 36);	
-		}
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);	
-		glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	}
-}

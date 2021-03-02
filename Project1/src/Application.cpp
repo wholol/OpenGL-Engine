@@ -14,6 +14,7 @@
 #include "SkyBox.h"
 #include "Light.h"
 #include "Shapes.h"
+#include "IBL_Setup.h"
 
 double lastX = 400, lastY = 300;	//initialize mouse pos to center of screen
 bool firstMouse = true;
@@ -22,6 +23,7 @@ float deltatime = 0.0f;
 float lastframe = 0.0f;
 
 void renderCube();
+void renderQuad();
 
 glm::vec3 camerapos = glm::vec3(0.0f, 0.0f, 3.0f);
 camera cam(camerapos);
@@ -102,7 +104,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 
 
@@ -178,181 +180,9 @@ int main()
 	//sphere
 	Shapes spheres(ShapeType::SPHERE);
 	Shader pbrshader("assets/shaders/pbr.vs" , "assets/shaders/pbr.fs" );
+	Shader pbrIBLshader("assets/shaders/pbr_IBL.vs", "assets/shaders/pbr_IBL.fs");
+	IBL_Setup newport_loft("newport_loft.hdr");
 
-#define IBL_enable 1
-
-#if IBL_enable
-	//PBR IBL
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	unsigned int cubeFBO, cubeRBO;
-	glGenFramebuffers(1, &cubeFBO);
-	glGenRenderbuffers(1, &cubeRBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, cubeFBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, cubeRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, cubeRBO);
-
-	Texture hdrTexture;		//load hdr texture
-	hdrTexture.loadHDR("newport_loft.hdr");
-	Texture envCubeMap;		//set up an empty cube map with no data
-	
-	
-	glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-	
-	glm::mat4 captureViews[] =
-	{
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-	};
-
-
-	
-	//STEP 1: CONVERT HDR TEXTURE (EQUIRECT MAP) INTO CUBE
-	Shader equi_2_cubemap_shader("assets/shaders/equi_2_cubemap.vs", "assets/shaders/equi_2_cubemap.fs");
-	//equi_2_cubemap_shader.use();
-	//equi_2_cubemap_shader.setUniform("projection", captureProjection);
-	//equi_2_cubemap_shader.setUniform("equirectangularMap", 0);	//sampler2D
-	//glActiveTexture(GL_TEXTURE0);
-	//hdrTexture.Bind();		//hdr texture == equirectangularMap.
-
-
-	hdrTexture.HDR_to_CubeMap("newport_loft.hdr", 512, 512, envCubeMap, equi_2_cubemap_shader);
-
-
-	//STEP 2: sample hdr texture onto a cube, and store it into a cubemap. rendering is done on another FBO.
-	//glViewport(0, 0, 512, 512);
-	//glBindFramebuffer(GL_FRAMEBUFFER, cubeFBO);
-	
-	//for (int i = 0u; i < 6; ++i)	//bind the cubemap to the framebuffer. in a way, we "fill" the envcube map, which was set to null data initially.
-	//{
-	//	equi_2_cubemap_shader.setUniform("view", captureViews[i]);
-	//	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubeMap.getTexID(), 0);
-		//render cube to the frame buffer.
-	//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//	renderCube();
-	//}
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);	//unbind FBO.
-	//glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-	
-	Texture HDRCubeMap;		//cubemap to map HDR image on
-	Texture ConvolutedHDR;
-	//ConvolutedHDR.HDR_to_CubeMap("Newport_Loft_Env.hdr", 512, 512, HDRCubeMap,equi_2_cubemap_shader);	//convet HDR iamge into the cubemap.
-	
-	ConvolutedHDR.loadHDR("newport_loft.hdr");	//load blurred HDR
-	
-	
-	equi_2_cubemap_shader.use();
-	equi_2_cubemap_shader.setUniform("projection", captureProjection);
-	equi_2_cubemap_shader.setUniform("equirectangularMap", 0);	//sampler2D
-	glActiveTexture(GL_TEXTURE0);
-	ConvolutedHDR.Bind();
-	
-	glViewport(0, 0, 512, 512);
-	unsigned int FBO_2ND, RBO_2ND;
-	glGenFramebuffers(1, &FBO_2ND);
-	glGenRenderbuffers(1, &RBO_2ND);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO_2ND);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO_2ND);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO_2ND);
-
-
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO_2ND);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO_2ND);
-	
-	for (int i = 0u; i < 6; ++i)	//bind the cubemap to the framebuffer. in a way, we "fill" the envcube map, which was set to null data initially.
-	{
-		equi_2_cubemap_shader.setUniform("view", captureViews[i]);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, HDRCubeMap.getTexID(), 0);
-		//render cube to the frame buffer.
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-		renderCube();
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);	//unbind FBO.
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	
-
-	//SPECULAR IBL:
-	//STEP1 : GENERATE PREFILTERED ENVIONMENT MIPMAP WITH VARYING ROUGHNESS.
-	unsigned int prefilterMap;
-	glGenTextures(1, &prefilterMap);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
-	for (unsigned int i = 0; i < 6; ++i)
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 128, 128, 0, GL_RGB, GL_FLOAT, nullptr);
-	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);			//note that the mipmap is also nullptr now.
-
-	Shader prefilter_specularIBL("assets/shaders/equi_2_cubemap.vs", "assets/shaders/prefilter_specularIBL.fs");
-	prefilter_specularIBL.use();
-	glBindFramebuffer(GL_FRAMEBUFFER, cubeFBO);	//to render to cubemap
-	int max_mipmaps = 5;
-	for (int i = 0; i < max_mipmaps; ++i)
-	{
-		float roughness = float(i) / float(max_mipmaps);
-		prefilter_specularIBL.setUniform("roughness", roughness);
-
-		//resizeing mipmaps: rather trivial, each image is halved for every mipmap iteration.
-		unsigned int mipWidth = 128 * std::pow(0.5, i);
-		unsigned int mipHeight = 128 * std::pow(0.5, i);
-		glBindRenderbuffer(GL_FRAMEBUFFER, cubeRBO);
-		for (int j = 0; j < 6; ++j)
-		{
-			prefilter_specularIBL.setUniform("view", captureViews[i]);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, prefilterMap, 0);
-			
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			renderCube();
-		}
-	}
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);	//unbind FBO.
-	
-
-	//convolute the enviormnet cubemap
-	//Texture irradianceCubeMap;
-	//irradianceCubeMap.genCubeMap(32,32);
-	//Shader convoluteShader("assets/shaders/equi_2_cubemap_shader.vs", "assets/shaders/convolute_cubemap.fs");
-	//convoluteShader.use();
-	//
-	//glBindFramebuffer(GL_FRAMEBUFFER, cubeFBO);
-	//glBindRenderbuffer(GL_RENDERBUFFER, cubeRBO);
-	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
-	//
-	//
-    //convoluteShader.setUniform("projection", captureProjection);
-	//convoluteShader.setUniform("environmentMap", 0);
-	//glActiveTexture(GL_TEXTURE0);
-	//envCubeMap.Bind();
-	//glBindFramebuffer(GL_FRAMEBUFFER, cubeFBO);
-	//glViewport(0, 0,32, 32);
-	//for (int i = 0u; i < 6; ++i)	//bind the cubemap to the framebuffer. in a way, we "fill" the envcube map, which was set to null data initially.
-	//{
-	//	convoluteShader.setUniform("view", captureViews[i]);
-	//	
-	//	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceCubeMap.getTexID(), 0);
-	//	//render cube to the frame buffer.
-	//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//
-	//	renderCube();
-	//}
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);	//unbind FBO.
-
-
-	SkyBox IBL(envCubeMap);		//skybox = for rendering purposes.
-#endif
 
 	float t = 0.0f;
 	
@@ -378,8 +208,6 @@ int main()
 		lastframe = currentFrame;
 		processInput(window);
 
-		
-		
 		//imgui::model matrix here (translation/rotation)
 		float translateX = 0.0f;
 		float translateY = 0.0f;
@@ -395,14 +223,13 @@ int main()
 		glm::mat4 view = glm::mat4(1.0f);
 		view = cam.GetViewMat();
 		
-		
 		//if imgui::pbr workflow
 		pbrshader.use();
 		pbrshader.setUniform("view", view);
 		pbrshader.setUniform("camPos", cam.camerapos);
 		pbrshader.setUniform("projection", projection);
-
 		
+
 		float ao = 1.0f;		//hould be slider
 		glm::vec3 albedo = glm::vec3(0.5f, 0.0f, 0.0f);	//slider
 		float metallic = 1.0f;	//slider
@@ -430,13 +257,13 @@ int main()
 		}
 		else
 		{
+			pbrshader.setUniform("ew", ao);
 			pbrshader.setUniform("ao", ao);
 			pbrshader.setUniform("albedo", albedo);
 			pbrshader.setUniform("metallic", metallic);
 			pbrshader.setUniform("roughness", roughness);
 			pbrshader.setUniform("isTextured", isTextured);
 		}
-	
 		
 		for (int i = 0; i < light.numPointLights(); ++i)
 		{
@@ -444,7 +271,36 @@ int main()
 			pbrshader.setUniform("light[" + std::to_string(i) + "].LightColor", light.PointLight_vec[i].Color);
 		}
 
-		spheres.renderSphere(1,2,10.5 , pbrshader);
+		pbrIBLshader.use();
+		pbrIBLshader.setUniform("view", view);
+		pbrIBLshader.setUniform("camPos", cam.camerapos);
+		pbrIBLshader.setUniform("projection", projection);
+		pbrIBLshader.setUniform("ao", ao);
+		pbrIBLshader.setUniform("albedo", albedo);
+		pbrIBLshader.setUniform("metallic", metallic);
+		pbrIBLshader.setUniform("roughness", roughness);
+		//pbrIBLshader.setUniform("isTextured", isTextured);
+		
+		//diffuse and speuclat texture map for IBL
+		pbrIBLshader.setUniform("irradianceMap", 0);
+		glActiveTexture(GL_TEXTURE0);
+		newport_loft.diffuse_irradiance_Bind();
+		pbrIBLshader.setUniform("prefilterMap", 1);
+		glActiveTexture(GL_TEXTURE1);
+		newport_loft.specular_cubemap_Bind();
+		pbrIBLshader.setUniform("brdfLUT", 2);
+		glActiveTexture(GL_TEXTURE2);
+		newport_loft.BRDF_intergration_map_Bind();
+		//
+		//
+		//
+		for (int i = 0; i < light.numPointLights(); ++i)
+		{
+			pbrIBLshader.setUniform("light[" + std::to_string(i) + "].LightPos", light.PointLight_vec[i].position);
+			pbrIBLshader.setUniform("light[" + std::to_string(i) + "].LightColor", light.PointLight_vec[i].Color);
+		}
+
+		spheres.renderSphere(1,2,10.5 , pbrIBLshader);
 
 
 		//if imgui:: IBL scene
@@ -458,7 +314,6 @@ int main()
 		//shaodw mapping? requires different scenes i guess?
 
 		//add post processing too! (SSAO/ bloom)
-
 
 
 		//bagshader.use();
@@ -479,11 +334,10 @@ int main()
 		
 
 
-
 		//render skybox last
 		//use imgui to change cubemap texture.
-		sky.setCubeMapTexture(envCubeMap);
-		sky.DrawSkyBox(skyboxshader,cam.GetViewMat(),projection);
+		sky.setCubeMapTexture(newport_loft.getRenderCubeMap());
+		sky.DrawSkyBox(skyboxshader, cam.GetViewMat(), projection);
 
 		
 		
@@ -571,4 +425,32 @@ void renderCube()
 	glBindVertexArray(0);
 }
 
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+	if (quadVAO == 0)
+	{
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
 

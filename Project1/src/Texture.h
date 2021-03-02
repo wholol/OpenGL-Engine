@@ -22,11 +22,10 @@ public:
 	void loadCubeMap(const std::vector<std::string>& img_names);
 	void loadHDR(const std::string& img_name);
 	void loadTexture(const std::string& img_name);
-	void genCubeMap(int texWidth, int texHeight , bool enableMipMap = false) const;		//generate null cubemap
+	void genCubeMap(int texWidth, int texHeight , bool enableMipMap = false);		//generate null cubemap
 	void genTexture(int texWidth, int texHeight);
 	unsigned int getTexID() const;
 	void Bind();
-	void HDR_to_CubeMap(const std::string& img_name , int texWidth, int texHeight,const Texture& nullCubeMap , Shader& equi_2_rect);		//converts the current texture to HDR
 	unsigned int ID;
 
 private:

@@ -54,6 +54,9 @@
     <ClCompile Include="src\IBL_Setup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ShadowMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Shader.h">
@@ -95,6 +98,9 @@
     <ClInclude Include="src\IBL_Setup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\ShadowMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="src\shaders\textures\back.jpg">
@@ -126,5 +132,11 @@
     <None Include="assets\shaders\lightvertex.vs" />
     <None Include="assets\shaders\skyfrag.fs" />
     <None Include="assets\shaders\skyvert.vs" />
+    <None Include="assets\shaders\IBL_Setup\BRDF_intergration_map.fs" />
+    <None Include="assets\shaders\IBL_Setup\BRDF_intergration_map.vs" />
+    <None Include="assets\shaders\IBL_Setup\convolute_cubemap.fs" />
+    <None Include="assets\shaders\IBL_Setup\cubemap.vs" />
+    <None Include="assets\shaders\IBL_Setup\equi_2_cubemap.fs" />
+    <None Include="assets\shaders\IBL_Setup\prefilter_specular_IBL.fs" />
   </ItemGroup>
 </Project>

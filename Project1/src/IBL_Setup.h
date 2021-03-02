@@ -4,15 +4,18 @@
 #include <GL/glew.h>	
 
 //given a hdr map, set up the diffuse irradiance map , specular irradiace mipmap, and BRDF intergration map
+
+
 class IBL_Setup
 {
 public:
 
-	IBL_Setup(const std::string& img_name , int diffuse_irr_texWidth , int diffuse_irr_texHeight, 
-				int specular_texWidth , int specular_texHeight , int BRDF_intergral_texWidth, int BRDF_intergral_texHeight);
+	IBL_Setup(const std::string& img_name , int diffuse_irr_texWidth = 512 , int diffuse_irr_texHeight = 512, 
+				int specular_texWidth = 128 , int specular_texHeight = 128 , int BRDF_intergral_texWidth = 512, int BRDF_intergral_texHeight = 512);
 	
+	Texture& getRenderCubeMap();
 	void diffuse_irradiance_Bind();
-	void BRDF_itnergration_map_Bind();
+	void BRDF_intergration_map_Bind();
 	void specular_cubemap_Bind();
 
 private:
@@ -28,19 +31,20 @@ private:
 	int specular_texWdith, specular_texHeight;
 	int BRDF_intergral_texWidth, BRDF_intergral_texHeight;
 
-	//shaders involved
-	Shader equi_2_cubemap_shader = Shader("assets/shaders/equi_2_cubemap.vs", "assets/shaders/equi_2_cubemap.fs");	
-	Shader diff_convolution_shader = Shader("assets/shaders/equi_2_cubemap.vs", "assets/shaders/convolute_cubemap.fs");
-	Shader BRDF_intergrate_shader = Shader("assets/shaders/BRDF_IBL.vs", "assets/shaders/BRDF_IBL.fs");
-	Shader specular_pre_filtered_shader = Shader("assets/shaders/equi_2_cubemap.vs", "assets/shaders/prefilter_specular_IBL.fs");
+	//diffuse IBL
+	Shader equi_2_cubemap_shader = Shader("assets/shaders/IBL_Setup/cubemap.vs", "assets/shaders/IBL_Setup/equi_2_cubemap.fs");	
+	Shader diff_convolution_shader = Shader("assets/shaders/IBL_Setup/cubemap.vs", "assets/shaders/IBL_Setup/convolute_cubemap.fs");
 
+	//epic game split sum (specular IBL)
+	Shader BRDF_intergrate_shader = Shader("assets/shaders/IBL_Setup/BRDF_intergration_map.vs", "assets/shaders/IBL_Setup/BRDF_intergration_map.fs");
+	Shader specular_pre_filtered_shader = Shader("assets/shaders/IBL_Setup/cubemap.vs", "assets/shaders/IBL_Setup/prefilter_specular_IBL.fs");
 
+	void HDR_to_cubemap();
 	void diffuse_irradiance_init();
 	void BRDF_intergation_map_init();
 	void specular_mipmap_init();
 
-	unsigned int FBO, RBO;		//frame buffer adn render buffer object.
-	
+	unsigned int FBO, RBO;		//frame buffer and render buffer object.
 	
 	
 	unsigned int cubeVAO = 0;

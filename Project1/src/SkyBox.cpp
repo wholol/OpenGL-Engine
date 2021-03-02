@@ -66,6 +66,7 @@ void SkyBox::DrawSkyBox(Shader& skyboxshader,const glm::mat4& CameraViewMat,cons
 	glm::mat4 view = glm::mat4(glm::mat3(CameraViewMat));
 	skyboxshader.setUniform("view", view); //remove translation to prevent skybox moving
 	skyboxshader.setUniform("projection", projection);
+	skyboxshader.setUniform("skybox", 0);
 	glActiveTexture(GL_TEXTURE0);
 	cubemap.Bind();
 	SkyBoxVAO.Bind();
