@@ -127,13 +127,13 @@ void Texture::genCubeMap(int texWidth, int texHeight, bool enableMipMap)
 	}
 }
 
-void Texture::genTexture(int texWidth, int texHeight)
+void Texture::genTexture(int texWidth, int texHeight , GLint internalformat, GLenum pixelformat)
 {
 	
 	textype = Texture_Type::TEXTURE_2D;
 
 	glBindTexture(GL_TEXTURE_2D, ID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, texWidth, texHeight, 0, GL_RG, GL_FLOAT,nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, internalformat, texWidth, texHeight, 0, pixelformat, GL_FLOAT,nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

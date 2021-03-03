@@ -126,7 +126,7 @@ void IBL_Setup::diffuse_irradiance_init()
 
 void IBL_Setup::BRDF_intergation_map_init()
 {
-	BRDF_intergration_map.genTexture(BRDF_intergral_texWidth, BRDF_intergral_texHeight);
+	BRDF_intergration_map.genTexture(BRDF_intergral_texWidth, BRDF_intergral_texHeight,GL_RG16F,GL_RG);
 	BRDF_intergrate_shader.use();
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, RBO);

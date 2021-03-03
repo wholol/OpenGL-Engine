@@ -23,7 +23,7 @@ public:
 	void loadHDR(const std::string& img_name);
 	void loadTexture(const std::string& img_name);
 	void genCubeMap(int texWidth, int texHeight , bool enableMipMap = false);		//generate null cubemap
-	void genTexture(int texWidth, int texHeight);
+	void genTexture(int texWidth, int texHeight , GLint internalformat, GLenum pixelformat);			//generate null 2d texture
 	unsigned int getTexID() const;
 	void Bind();
 	unsigned int ID;

@@ -54,7 +54,7 @@
     <ClCompile Include="src\IBL_Setup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ShadowMap.cpp">
+    <ClCompile Include="src\Blur.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,7 +98,7 @@
     <ClInclude Include="src\IBL_Setup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ShadowMap.h">
+    <ClInclude Include="src\Blur.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
